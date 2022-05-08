@@ -15,7 +15,7 @@ from .image_prompts import BatchImagePrompts
 class RuDalleAspectRatio:
 
     def __init__(self, dalle, vae, tokenizer, aspect_ratio=1.0, window=128, image_size=256, bs=4,
-                 device='cuda', quite=False):
+                 device='cuda', quite=False, image_prompt=None):
         """
         :param float aspect_ratio: w / h
         :param int window: size of context window  for h_generations
@@ -39,6 +39,7 @@ class RuDalleAspectRatio:
         self.patch_size = image_size // self.image_tokens_per_dim
         self.bs = bs
         self.quite = quite
+        self.image_prompt = image_prompt
         if aspect_ratio <= 1:
             self.is_vertical = True
             self.w = image_size
@@ -49,7 +50,7 @@ class RuDalleAspectRatio:
             self.w = int(round(image_size * aspect_ratio))
         self.aspect_ratio = aspect_ratio
 
-    def generate_images(self, text, top_k=1024, top_p=0.975, images_num=4, seed=None):
+    def generate_images(self, text, top_k=1024, top_p=0.975, images_num=4, seed=None, image_prompt=None):
         if seed is not None:
             utils.seed_everything(seed)
 
@@ -57,7 +58,7 @@ class RuDalleAspectRatio:
             codebooks = self.generate_h_codebooks(text, top_k=top_k, top_p=top_p, images_num=images_num)
             pil_images = self.decode_h_codebooks(codebooks)
         else:
-            codebooks, pil_images = [], []
+            codebooks, pil_images = [], [image_prompt]
             image_prompts = None
             while (len(pil_images)+1)*self.window <= self.w:
                 if pil_images:
